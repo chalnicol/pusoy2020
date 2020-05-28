@@ -217,10 +217,10 @@ window.onload = function () {
 
             var bz = 255 * _scale,
                 bs = bz * 0.1,
-                bx = (_gW - ( 3 * (bz + bs) - bs ))/2 + bz/2,
+                bx = (_gW - ( 2 * (bz + bs) - bs ))/2 + bz/2,
                 by = _gH *0.55;
 
-            for ( var i = 0; i < 3; i++ ) {
+            for ( var i = 0; i < 2; i++ ) {
 
                 var xs = bx + i * ( bz + bs );
 
@@ -360,10 +360,9 @@ window.onload = function () {
         },
         initCards : function () {
 
-    
-            var rndOrd = this.generateRandomOrder ();
+            this.crdOrder = this.generateRandomOrder ();
 
-            //var rndOrd = [ 23,36,49,  13,27,15,29,17, 12,11,10,9,8  ];
+            //this.crdOrder = [ 23,36,49,  13,27,15,29,17, 12,11,10,9,8  ];
 
             this.cardContainer = this.add.container( 0, 0 );
 
@@ -372,8 +371,8 @@ window.onload = function () {
 
             for ( var i = 0; i < 13 ; i++ ) {
 
-                var knd = Math.floor ( rndOrd[i] / 13 ),
-                    val = rndOrd [i] % 13,
+                var knd = Math.floor ( this.crdOrder[i] / 13 ),
+                    val = this.crdOrder[i] % 13,
                     str = this.cardStrVal [ val ];
 
                 var cx = this.grid [ i + 2 ].x ,
@@ -497,7 +496,7 @@ window.onload = function () {
                     this.leaveGame ();
                 break;
                 case 1:
-                    //..
+                    this.autoWayCard ();
                 break;
                 case 2:
                     this.arrangeCards ();
@@ -625,17 +624,16 @@ window.onload = function () {
              
             var plyrCard = this.getPlayerCard ();
 
-            var topread = this.readCard ( plyrCard.top );
-            var midread = this.readCard ( plyrCard.mid );
-            var botread = this.readCard ( plyrCard.bot );
+            var topread = this.getCardRanking ( plyrCard.top );
+            var midread = this.getCardRanking ( plyrCard.mid );
+            var botread = this.getCardRanking ( plyrCard.bot );
 
-            var handsGood = this.isCardsGood ( topread, midread, botread );
+            var handsGood = this.isHandGood ( topread, midread, botread );
 
             this.wayReads [0].text = topread.way;
             this.wayReads [1].text = midread.way;
             this.wayReads [2].text = botread.way;
 
-                    
             this.wayInd.setFrame ( handsGood ? 1 : 2 );
 
         },
@@ -650,12 +648,11 @@ window.onload = function () {
                 totalValue : 0
             };
 
-
             for ( var i = 0; i < arr.length; i++ ) {
                     
                 for ( var j = i + 1; j < arr.length; j++ ) {
 
-                    if ( ( arr[j].val > arr[i].val && arr [i].val != 0 )  || arr [j].val == 0 ) {
+                    if ( ( arr[j].val > arr[i].val && arr [i].val != 0 )  || (arr [j].val == 0 && arr[i].val != 0 ) ) {
 
                         var temp = arr [j];
 
@@ -664,7 +661,7 @@ window.onload = function () {
                         arr.splice ( i, 0, temp );
                     }
 
-                }
+                } 
 
             } 
             
@@ -690,7 +687,6 @@ window.onload = function () {
 
             var cnt = 0;
 
-            
             for ( var i in val ) {
 
                 if ( val [i].length == 4 ){
@@ -717,7 +713,7 @@ window.onload = function () {
             return finData;
 
         },
-        sortCard : function ( data ) {
+        getCardOrder : function ( data ) {
             
             //sort
             var sorted = [];
@@ -737,11 +733,11 @@ window.onload = function () {
             return sorted;
 
         },
-        readCard : function ( data ) {
+        getCardRanking : function ( data ) {
 
             var evalCard = this.getCardData ( data );
 
-            var sorted = this.sortCard ( evalCard );
+            var sorted = this.getCardOrder ( evalCard );
 
             var score = 0;
 
@@ -803,7 +799,7 @@ window.onload = function () {
             };
 
         }, 
-        isCardsGood : function ( top, mid, bot ) {
+        isHandGood : function ( top, mid, bot ) {
 
             if ( (mid.score < bot.score) || (top.score < mid.score) ) return false;
 
@@ -861,9 +857,9 @@ window.onload = function () {
                 midEval = this.getCardData ( plyrCard.mid ),
                 botEval = this.getCardData ( plyrCard.bot );
 
-            var topSorted = this.sortCard ( topEval ),
-                midSorted = this.sortCard ( midEval ),
-                botSorted = this.sortCard ( botEval );
+            var topSorted = this.getCardOrder ( topEval ),
+                midSorted = this.getCardOrder ( midEval ),
+                botSorted = this.getCardOrder ( botEval );
 
             var fin = topSorted.concat ( midSorted, botSorted );
 
@@ -889,7 +885,6 @@ window.onload = function () {
 
             var fin = plyrCard.bot.concat ( plyrCard.mid );
 
-
             for ( var i = 0; i < fin.length; i++ ) {
 
                 var crd = this.cardContainer.getByName ( fin[i].id );
@@ -904,26 +899,6 @@ window.onload = function () {
                 })
 
             } 
-
-        },
-        sortLevels : function () {
-
-            var myHand = this.splitPlayersHand ( this.hand );
-
-            var topCard = this.evaluateCard ( myHand.top ),
-                midCard = this.evaluateCard ( myHand.mid ),
-                botCard = this.evaluateCard ( myHand.bot );
-
-            var newTop = this.sortCard ( topCard ),
-                newMid = this.sortCard ( midCard ),
-                newBot = this.sortCard ( botCard );
-
-            var newArr = [];
-            newArr = newArr.concat ( newTop, newMid, newBot );
-
-            this.hand = newArr;
-            
-            this.arrangeCards();
 
         },
         isStraight : function ( arr, low = false ) {
@@ -947,6 +922,35 @@ window.onload = function () {
             }
 
             return true;
+
+        },
+        autoWayCard : function () {
+
+            var plyrCard = [];
+
+            for ( var i = 0; i < 13; i++ ) {
+
+                var crd = this.cardContainer.getAt (i);
+
+                plyrCard.push ({
+                    'val' : crd.val,
+                    'knd' : crd.knd,
+                    'clr' : crd.clr,
+                    'id' : crd.id
+                });
+
+            }
+
+            var plyrCardData = this.getCardData ( plyrCard );
+
+            var are = this.hasStraight ( plyrCard );
+
+            console.log ( plyrCardData );
+
+        },
+        hasStraight : function ( arr ) {
+
+          
 
         },
         generateRandomOrder : function () {
